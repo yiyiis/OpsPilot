@@ -20,4 +20,4 @@ bin
 manifest/docker/volumes
 
 # 环境变量（包含 API Key，切勿提交）
-.envdocs/
+.env

@@ -1,0 +1,54 @@
+# OpsPilot 主配置文件
+# API Key 通过 ${ENV_VAR} 从 .env 文件读取，必须填写
+
+server:
+  address: ":8000"
+  openapiPath: "/api.json"
+  swaggerPath: "/swagger"
+
+logger:
+  level: "all"
+  stdout: true
+
+# 智谱 GLM 模型配置（Think — 用于规划/重规划）
+glm_think_chat_model:
+  api_key: "${GLM_THINK_CHAT_MODEL_API_KEY}"
+  base_url: "https://open.bigmodel.cn/api/coding/paas/v4"
+  model: "glm-5.1"
+
+# 智谱 GLM Quick 模型（Quick — 用于对话/执行）
+glm_quick_chat_model:
+  api_key: "${GLM_QUICK_CHAT_MODEL_API_KEY}"
+  base_url: "https://open.bigmodel.cn/api/coding/paas/v4"
+  model: "glm-5.1"
+
+# Google Gemini Embedding 模型
+gemini_embedding_model:
+  api_key: "${GEMINI_EMBEDDING_MODEL_API_KEY}"
+  model: "gemini-embedding-2"
+
+# 知识库文档目录（绝对路径）
+file_dir: "/home/zouyiyi/code_data/code/goproject/src/SuperBizAgent-release-2026-05-19/knowledge"
+
+# MCP 服务器配置
+# 请求头中 ${ENV_VAR} 自动替换为 .env 中的环境变量值
+mcp_servers:
+  - name: "log-reader"
+    description: "本地日志文件查询"
+    connection_url: "http://localhost:3001/sse"
+    connection_type: "sse"
+    enabled: true
+  - name: "web-search-prime"
+    description: "智谱联网搜索（整合5家搜索引擎）"
+    connection_url: "https://open.bigmodel.cn/api/mcp/web_search_prime/mcp"
+    connection_type: "streamable_http"
+    connection_headers:
+      Authorization: "Bearer ${GLM_THINK_CHAT_MODEL_API_KEY}"
+    enabled: true
+  - name: "web-reader"
+    description: "智谱网页读取（获取网页全文内容）"
+    connection_url: "https://open.bigmodel.cn/api/mcp/web_reader/mcp"
+    connection_type: "streamable_http"
+    connection_headers:
+      Authorization: "Bearer ${GLM_THINK_CHAT_MODEL_API_KEY}"
+    enabled: true

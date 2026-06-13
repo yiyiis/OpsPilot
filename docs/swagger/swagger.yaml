@@ -1,0 +1,142 @@
+basePath: /api
+definitions:
+  chat.ChatReq:
+    properties:
+      Id:
+        type: string
+      Question:
+        type: string
+    type: object
+  chat.ChatStreamReq:
+    properties:
+      Id:
+        type: string
+      Question:
+        type: string
+    type: object
+host: localhost:6872
+info:
+  contact: {}
+  description: AI 驱动的智能运维助手 API
+  title: OpsPilot API
+  version: "1.0"
+paths:
+  /ai_ops:
+    post:
+      consumes:
+      - application/json
+      description: 使用 Plan-Execute-Replan 模式自动分析告警，生成诊断报告
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: AI运维告警分析
+      tags:
+      - aiops
+  /chat:
+    post:
+      consumes:
+      - application/json
+      description: 同步 RAG 对话，返回完整回答
+      parameters:
+      - description: 对话请求
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/chat.ChatReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: 对话
+      tags:
+      - chat
+  /chat_stream:
+    post:
+      consumes:
+      - application/json
+      description: SSE 流式 RAG 对话，逐 token 推送
+      parameters:
+      - description: 流式对话请求
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/chat.ChatStreamReq'
+      produces:
+      - text/event-stream
+      responses:
+        "200":
+          description: SSE stream
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: 流式对话
+      tags:
+      - chat
+  /upload:
+    post:
+      consumes:
+      - multipart/form-data
+      description: 上传 .md/.txt 文件到知识库，自动分块、向量化、入库
+      parameters:
+      - description: 上传文件
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: 文件上传
+      tags:
+      - upload
+swagger: "2.0"

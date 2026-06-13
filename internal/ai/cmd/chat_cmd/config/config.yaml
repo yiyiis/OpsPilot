@@ -1,0 +1,51 @@
+# https://goframe.org/docs/web/server-config-file-template
+server:
+  address: ":8000"
+  openapiPath: "/api.json"
+  swaggerPath: "/swagger"
+
+# https://goframe.org/docs/core/glog-config
+logger:
+  level: "all"
+  stdout: true
+
+glm_think_chat_model:
+  api_key: "xxxxxx"
+  base_url: "https://ark.cn-beijing.volces.com/api/v3"
+  model: "deepseek-v3-1-terminus"
+
+glm_quick_chat_model:
+  api_key: "xxxxxx"
+  base_url: "https://ark.cn-beijing.volces.com/api/v3"
+  model: "deepseek-v3-1-terminus"
+
+# Google Gemini embedding 模型配置
+gemini_embedding_model:
+  api_key: "你的Gemini API Key"
+  model: "gemini-embedding-2"
+
+file_dir: "/你的路径/OpsPilot/internal/ai/cmd/knowledge_cmd/docs"
+
+# MCP 服务器配置
+# connection_type: "sse" 或 "streamable_http"
+# 请求头值支持 ${config.key} 引用其他配置项
+mcp_servers:
+  - name: "log-reader"
+    description: "本地日志文件查询"
+    connection_url: "http://localhost:3001/sse"
+    connection_type: "sse"
+    enabled: true
+  - name: "web-search-prime"
+    description: "智谱联网搜索（整合5家搜索引擎）"
+    connection_url: "https://open.bigmodel.cn/api/mcp/web_search_prime/mcp"
+    connection_type: "streamable_http"
+    connection_headers:
+      Authorization: "Bearer ${glm_think_chat_model.api_key}"
+    enabled: true
+  - name: "web-reader"
+    description: "智谱网页读取（获取网页全文内容）"
+    connection_url: "https://open.bigmodel.cn/api/mcp/web_reader/mcp"
+    connection_type: "streamable_http"
+    connection_headers:
+      Authorization: "Bearer ${glm_think_chat_model.api_key}"
+    enabled: true

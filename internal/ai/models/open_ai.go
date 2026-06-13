@@ -49,9 +49,9 @@ import (
 func OpenAIForDeepSeekV31Think(ctx context.Context) (cm model.ToolCallingChatModel, err error) {
 	// 从 Viper 配置中读取模型参数
 	configObj := &openai.ChatModelConfig{
-		Model:   config.GetString("glm_think_chat_model.model"),
-		APIKey:  config.GetString("glm_think_chat_model.api_key"),
-		BaseURL: config.GetString("glm_think_chat_model.base_url"),
+		Model:   config.App.GLMThinkChat.Model,
+		APIKey:  config.App.GLMThinkChat.APIKey,
+		BaseURL: config.App.GLMThinkChat.BaseURL,
 	}
 
 	// 使用 Eino 的 OpenAI 兼容适配器创建模型
@@ -77,9 +77,9 @@ func OpenAIForDeepSeekV31Think(ctx context.Context) (cm model.ToolCallingChatMod
 // 配置来源：config.yaml 中的 glm_quick_chat_model 配置项
 func OpenAIForDeepSeekV3Quick(ctx context.Context) (cm model.ToolCallingChatModel, err error) {
 	configObj := &openai.ChatModelConfig{
-		Model:   config.GetString("glm_quick_chat_model.model"),
-		APIKey:  config.GetString("glm_quick_chat_model.api_key"),
-		BaseURL: config.GetString("glm_quick_chat_model.base_url"),
+		Model:   config.App.GLMQuickChat.Model,
+		APIKey:  config.App.GLMQuickChat.APIKey,
+		BaseURL: config.App.GLMQuickChat.BaseURL,
 	}
 	cm, err = openai.NewChatModel(ctx, configObj)
 	if err != nil {

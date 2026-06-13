@@ -30,6 +30,7 @@
 package tools
 
 import (
+	"OpsPilot/utility/config"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -100,8 +101,8 @@ func queryPrometheusAlerts() (PrometheusAlertsResult, error) {
 	// 开关：直接返回空结果（跳过下面的实际 HTTP 调用）
 	return PrometheusAlertsResult{}, nil
 
-	// 下面的代码当前不会执行
-	baseURL := "http://127.0.0.1:9090"
+	// 下面的代码当前不会执行（Prometheus 地址从 config.yaml 读取）
+	baseURL := config.App.Prometheus.BaseURL
 	apiURL := fmt.Sprintf("%s/api/v1/alerts", baseURL)
 
 	log.Printf("Querying Prometheus alerts: %s", apiURL)

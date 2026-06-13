@@ -30,6 +30,7 @@ package client
 
 import (
 	"OpsPilot/utility/common"
+	"OpsPilot/utility/config"
 	"context"
 	"fmt"
 
@@ -47,7 +48,7 @@ import (
 func NewMilvusClient(ctx context.Context) (cli.Client, error) {
 	// 步骤1：连接 default 数据库（用于管理数据库）
 	defaultClient, err := cli.NewClient(ctx, cli.Config{
-		Address: "localhost:19530", // Milvus 默认端口
+		Address: config.App.Milvus.Address, // 从 config.yaml 读取
 		DBName:  "default",
 	})
 	if err != nil {
@@ -75,7 +76,7 @@ func NewMilvusClient(ctx context.Context) (cli.Client, error) {
 
 	// 步骤3：创建连接到 "agent" 数据库的客户端
 	agentClient, err := cli.NewClient(ctx, cli.Config{
-		Address: "localhost:19530",
+		Address: config.App.Milvus.Address,
 		DBName:  common.MilvusDBName, // "agent"
 	})
 	if err != nil {

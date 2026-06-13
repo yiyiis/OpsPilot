@@ -34,7 +34,6 @@ import (
 	"context"
 	"log"
 	"os"
-	"regexp"
 
 	"OpsPilot/utility/config"
 
@@ -44,19 +43,6 @@ import (
 	"github.com/mark3labs/mcp-go/client/transport"
 	"github.com/mark3labs/mcp-go/mcp"
 )
-
-// MCPServerConfig 对应 config.yaml 中 mcp_servers 下的单个服务器配置
-type MCPServerConfig struct {
-	Name              string            `mapstructure:"name"`
-	Description       string            `mapstructure:"description"`
-	ConnectionURL     string            `mapstructure:"connection_url"`
-	ConnectionType    string            `mapstructure:"connection_type"`    // "stdio"、"sse" 或 "streamable_http"
-	Command           string            `mapstructure:"command"`            // stdio 模式下的可执行文件路径
-	Args              []string          `mapstructure:"args"`               // stdio 模式下的命令行参数
-	Env               []string          `mapstructure:"env"`                // stdio 模式下的额外环境变量
-	ConnectionHeaders map[string]string `mapstructure:"connection_headers"` // SSE / Streamable HTTP 自定义请求头
-	Enabled           bool              `mapstructure:"enabled"`
-}
 
 // GetAllMcpTools 连接所有配置的 MCP 服务器，汇总返回工具列表
 //
@@ -74,12 +60,8 @@ type MCPServerConfig struct {
 //
 // 容错机制：单个服务器连接失败只记录警告，不影响其他服务器
 func GetAllMcpTools() ([]tool.BaseTool, error) {
-	// 读取 MCP 服务器配置列表
-	var servers []MCPServerConfig
-	if err := config.UnmarshalKey("mcp_servers", &servers); err != nil {
-		log.Printf("[MCP] 读取 mcp_servers 配置失败: %v", err)
-		return []tool.BaseTool{}, err
-	}
+	// 读取 MCP 服务器配置列表（已由 config.Init 解码并完成 ${VAR} 替换）
+	servers := config.App.MCPServers
 
 	ctx := context.Background()
 	var allTools []tool.BaseTool
@@ -138,7 +120,7 @@ func GetAllMcpTools() ([]tool.BaseTool, error) {
 }
 
 // createMcpClient 根据配置创建对应类型的 MCP 客户端
-func createMcpClient(srv MCPServerConfig) (*client.Client, error) {
+func createMcpClient(srv config.MCPServerConfig) (*client.Client, error) {
 	switch srv.ConnectionType {
 	case "stdio":
 		// stdio 模式：启动子进程，通过 stdin/stdout 通信
@@ -148,17 +130,17 @@ func createMcpClient(srv MCPServerConfig) (*client.Client, error) {
 		return client.NewStdioMCPClient(srv.Command, env, srv.Args...)
 
 	case "streamable_http":
-		headers := resolveHeaders(srv.ConnectionHeaders)
+		// connection_headers 中的 ${VAR} 已在 config 加载时由 interpolateEnv 替换，直接使用
 		return client.NewStreamableHttpClient(
 			srv.ConnectionURL,
-			transport.WithHTTPHeaders(headers),
+			transport.WithHTTPHeaders(srv.ConnectionHeaders),
 		)
 
 	case "sse":
-		// SSE 也支持自定义请求头（用于认证等）
+		// SSE 也支持自定义请求头（用于认证等，${VAR} 已在 config 加载时替换）
 		opts := []transport.ClientOption{}
 		if len(srv.ConnectionHeaders) > 0 {
-			opts = append(opts, client.WithHeaders(resolveHeaders(srv.ConnectionHeaders)))
+			opts = append(opts, client.WithHeaders(srv.ConnectionHeaders))
 		}
 		return client.NewSSEMCPClient(srv.ConnectionURL, opts...)
 
@@ -166,23 +148,4 @@ func createMcpClient(srv MCPServerConfig) (*client.Client, error) {
 		log.Printf("[MCP] 未知的连接类型 [%s]: %s，默认使用 SSE", srv.Name, srv.ConnectionType)
 		return client.NewSSEMCPClient(srv.ConnectionURL)
 	}
-}
-
-// resolveHeaders 精确替换请求头中的 ${ENV_VAR} 为环境变量值
-// 仅匹配 ${...} 格式，不会误伤 $HOME 等 shell 变量或 JWT 中的字面量
-var envRefRegex = regexp.MustCompile(`\$\{([A-Z][A-Z0-9_]*)\}`)
-
-func resolveHeaders(headers map[string]string) map[string]string {
-	resolved := make(map[string]string, len(headers))
-	for key, value := range headers {
-		resolved[key] = envRefRegex.ReplaceAllStringFunc(value, func(match string) string {
-			envKey := match[2 : len(match)-1] // 去掉 ${ 和 }
-			envVal := os.Getenv(envKey)
-			if envVal == "" {
-				log.Printf("[MCP] 警告：环境变量 %s 未设置", envKey)
-			}
-			return envVal
-		})
-	}
-	return resolved
 }

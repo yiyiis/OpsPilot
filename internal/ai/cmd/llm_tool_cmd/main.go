@@ -2,6 +2,7 @@ package main
 
 import (
 	tools2 "OpsPilot/internal/ai/tools"
+	"OpsPilot/utility/config"
 	"context"
 	"fmt"
 
@@ -11,14 +12,17 @@ import (
 )
 
 func main() {
+	// 初始化配置（复用主程序的 config.yaml + .env，避免硬编码 Key）
+	config.Init("manifest/config/config.yaml")
+
 	ctx := context.Background()
-	// 创建 ChatModel
-	config := &openai.ChatModelConfig{
-		APIKey:  "bc499880-ede3-4023-8991-2e84c0a83dd1",
-		Model:   "glm-5.1",
-		BaseURL: "https://open.bigmodel.cn/api/coding/paas/v4",
+	// 创建 ChatModel（配置从 config.yaml / .env 读取）
+	chatModelConfig := &openai.ChatModelConfig{
+		APIKey:  config.App.GLMQuickChat.APIKey,
+		Model:   config.App.GLMQuickChat.Model,
+		BaseURL: config.App.GLMQuickChat.BaseURL,
 	}
-	chatModel, err := openai.NewChatModel(ctx, config)
+	chatModel, err := openai.NewChatModel(ctx, chatModelConfig)
 	if err != nil {
 		panic(err)
 	}

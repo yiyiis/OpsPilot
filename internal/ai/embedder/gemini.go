@@ -31,8 +31,8 @@ type GeminiEmbedder struct {
 
 // NewGeminiEmbedder 创建 Gemini Embedder 实例
 func NewGeminiEmbedder(ctx context.Context) (*GeminiEmbedder, error) {
-	apiKey := config.GetString("gemini_embedding_model.api_key")
-	model := config.GetString("gemini_embedding_model.model")
+	apiKey := config.App.GeminiEmbedding.APIKey
+	model := config.App.GeminiEmbedding.Model
 	if model == "" {
 		model = "gemini-embedding-2"
 	}

@@ -21,7 +21,7 @@ import (
 func main() {
 	// 初始化配置
 	config.Init("manifest/config/config.yaml")
-	common.FileDir = config.GetString("file_dir")
+	common.FileDir = config.App.FileDir
 
 	// 创建 Gin 路由
 	r := gin.Default()
@@ -42,6 +42,6 @@ func main() {
 		api.POST("/ai_ops", handler.AIOps)
 	}
 
-	// 启动服务
-	r.Run(":6872")
+	// 启动服务（端口从 config.yaml 的 server.address 读取）
+	r.Run(config.App.Server.Address)
 }

@@ -1,8 +1,11 @@
-# OpsPilot 主配置文件
-# API Key 通过 ${ENV_VAR} 从 .env 文件读取，必须填写
+# OpsPilot 主配置文件模板
+#
+# 使用方法：复制本文件为 config.yaml（cp config.example.yaml config.yaml）后按需修改。
+# 其中 ${ENV_VAR} 占位符会自动从 .env 文件读取，无需在此填入真实 Key。
+# 仅 ${VAR} 形式会被替换（裸 $VAR 不会），因此含 $ 的值不会被误伤。
 
 server:
-  address: ":6872" # Gin 监听端口（对齐实际运行端口）
+  address: ":6872" # Gin 监听端口
   openapiPath: "/api.json"
   swaggerPath: "/swagger"
 
@@ -34,11 +37,11 @@ gemini_embedding_model:
   api_key: "${GEMINI_EMBEDDING_MODEL_API_KEY}"
   model: "gemini-embedding-2"
 
-# 知识库文档目录（绝对路径）
-file_dir: "/home/zouyiyi/code_data/code/goproject/src/SuperBizAgent-release-2026-05-19/knowledge"
+# 知识库文档目录（绝对路径，请按实际项目路径修改）
+file_dir: "/path/to/your/OpsPilot/knowledge"
 
 # MCP 服务器配置
-# 请求头中 ${ENV_VAR} 自动替换为 .env 中的环境变量值
+# 请求头中 ${ENV_VAR} 会自动替换为 .env 中的环境变量值
 mcp_servers:
   - name: "log-reader"
     description: "本地日志文件查询"

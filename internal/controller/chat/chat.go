@@ -38,7 +38,7 @@ func (h *ChatHandler) Chat(c *gin.Context) {
 		History: mem.GetSimpleMemory(id).GetMessages(),
 	}
 
-	runner, err := chat_pipeline.BuildChatAgent(c.Request.Context())
+	runner, err := chat_pipeline.GetChatAgent(c.Request.Context())
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error(), "data": nil})
 		return

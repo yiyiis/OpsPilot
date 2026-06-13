@@ -52,7 +52,7 @@ func (h *ChatHandler) ChatStream(c *gin.Context) {
 	// 使用 Invoke 而非 Stream，因为 Eino ReAct Agent 的 Stream 模式
 	// 在 LLM 先输出文本再输出 tool_calls 时会错误终止 ReAct 循环。
 	// 同步模式能正确执行完整的工具调用循环。
-	runner, err := chat_pipeline.BuildChatAgent(c.Request.Context())
+	runner, err := chat_pipeline.GetChatAgent(c.Request.Context())
 	if err != nil {
 		client.SendToClient("error", err.Error())
 		return

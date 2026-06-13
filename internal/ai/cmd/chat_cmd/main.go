@@ -17,7 +17,7 @@ func main() {
 		Query:   "你好",
 		History: mem.GetSimpleMemory(id).GetMessages(),
 	}
-	runner, err := chat_pipeline.BuildChatAgent(ctx)
+	runner, err := chat_pipeline.GetChatAgent(ctx)
 	if err != nil {
 		panic(err)
 	}

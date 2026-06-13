@@ -12,7 +12,7 @@
 
 本文件的角色：
   定义 RAG Chat 的完整 DAG 图拓扑。这是整个 Pipeline 的入口，
-  调用 BuildChatAgent 即可得到一个可运行的 Agent。
+  调用 GetChatAgent 即可得到一个可运行的 Agent（构建一次、请求间复用）。
 
 关键数据流（两路并行，在 ChatTemplate 汇聚）：
 
@@ -35,12 +35,47 @@ package chat_pipeline
 
 import (
 	"context"
+	"sync"
 
 	"github.com/cloudwego/eino/compose"
 	"github.com/cloudwego/eino/schema"
 )
 
-// BuildChatAgent 构建 RAG Chat Agent 的 DAG 图并编译为可执行对象
+// chatAgent 缓存编译好的 Chat Agent，进程内只构建一次、所有请求共享复用。
+//
+// 【性能优化】为什么要复用：
+// Agent 构建过程会建立 3 个 MCP 服务器连接（握手 + 列工具）、Milvus 客户端、
+// LLM 模型实例等。这些资源在运行期基本不变，若每个请求都重建，每条聊天消息
+// 都要重复 3 次 MCP 握手 + Milvus 连接，开销巨大且毫无必要。
+//
+// 【并发安全】Agent（编译后的 compose.Runnable）本身是无状态的——
+// 对话历史通过 UserMessage.History 每次请求单独传入，因此同一个 Runnable
+// 可以被多个请求/会话并发 Invoke。这里用 sync.Mutex + 空值检查实现
+// “构建一次、失败可重试”的单例：成功后缓存，失败则下次请求重新构建。
+var (
+	chatAgentMu sync.Mutex
+	chatAgent   compose.Runnable[*UserMessage, *schema.Message]
+)
+
+// GetChatAgent 获取（必要时首次构建）复用的 Chat Agent。
+//
+// 首次调用时构建一次 DAG 图并编译；之后所有请求直接返回缓存的 Runnable。
+// 传入的 ctx 仅用于首次构建；后续请求的 Invoke 仍使用各自的请求 context。
+func GetChatAgent(ctx context.Context) (compose.Runnable[*UserMessage, *schema.Message], error) {
+	chatAgentMu.Lock()
+	defer chatAgentMu.Unlock()
+	if chatAgent != nil {
+		return chatAgent, nil
+	}
+	r, err := buildChatAgent(ctx)
+	if err != nil {
+		return nil, err
+	}
+	chatAgent = r
+	return chatAgent, nil
+}
+
+// buildChatAgent 构建 RAG Chat Agent 的 DAG 图并编译为可执行对象
 //
 // 【AI 概念】图编排（Graph Orchestration）
 // 将复杂任务拆分为多个独立节点，用 DAG 定义执行顺序和数据流。
@@ -49,7 +84,7 @@ import (
 // 返回值：compose.Runnable[*UserMessage, *schema.Message]
 //   - 输入：UserMessage（用户问题 + 对话历史）
 //   - 输出：*schema.Message（Agent 的回答）
-func BuildChatAgent(ctx context.Context) (r compose.Runnable[*UserMessage, *schema.Message], err error) {
+func buildChatAgent(ctx context.Context) (r compose.Runnable[*UserMessage, *schema.Message], err error) {
 	// 定义 5 个图节点的名称常量
 	const (
 		InputToRag      = "InputToRag"      // 数据转换节点：提取问题文本用于 RAG 检索
